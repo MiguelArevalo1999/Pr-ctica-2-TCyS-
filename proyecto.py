@@ -5,11 +5,49 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt 
 from scipy.io.wavfile import read          
-
 import math as mt
-
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
 from sys import platform
 
+raiz = Tk()
+raiz.title("Proyecto Final Detección de vocales Eq. Chipocludo")
+raiz.resizable(0,0)
+raiz.geometry("500x250")
+raiz.config(bg="cyan")
+
+myFrame=Frame()
+myFrame.pack(side="top")
+myFrame.config(bg="white")
+
+#Logo ESCOM
+imagen=tk.PhotoImage(file="logoescom.png")
+imagen_sub=imagen.subsample(12)
+widget=ttk.Label(image=imagen_sub)
+widget.place(x=5,y=5)
+
+#Logo IPN
+imageni=tk.PhotoImage(file="ipn.png")
+imageni_sub=imageni.subsample(15)
+widgeti=ttk.Label(image=imageni_sub)
+widgeti.place(x=400,y=5)
+
+text = Label(text="Escuela Superior de Cómputo\n\n Arévalo Andrade Miguel Ángel \n Esquivel Salvatti José Luis\n \
+            López Morales Miguel Ángel\n Vaca García Jesús Fernando\n Vargas Espino Carlos Hassan")
+text.place(x=155,y=7)
+
+opcion_label=Label(raiz, text = "Opción")
+opcion_label.place(x=25,y=130)
+combo=ttk.Combobox(raiz)
+combo.place(x=80,y=130)
+combo['values']=('Añadir audio','Detectar vocal')
+
+label_nombre=Label(raiz, text = "Nombre:")
+label_nombre.place(x=25,y=160)
+message = ttk.Entry(raiz)
+# Posicionarla en la ventana.
+message.place(x=80, y=160)
 
 def clearScreen():
     """Description: Funcion que detecta el sistema operativo y relaciona su comando para borrar la pantalla
@@ -390,7 +428,5 @@ def menu():
         #input()
         #clearScreen()
         
-            
-if __name__ == "__main__":
-    menu()
+raiz.mainloop()
     
