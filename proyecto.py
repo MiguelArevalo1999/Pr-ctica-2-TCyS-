@@ -49,6 +49,19 @@ message = ttk.Entry(raiz)
 # Posicionarla en la ventana.
 message.place(x=80, y=160)
 
+def seleccionar_funcion():
+    """
+    Funcion que dependiendo de las opciones en el combobox ejecuta 
+    las operaciones correspondientes
+    """
+    combo_seleccion = combo.get() #Obtener la seleccion en el combobox
+    
+    if combo_seleccion == 'Añadir audio':
+        pass
+    elif combo_seleccion == 'Detectar vocal':
+        pass
+
+
 def clearScreen():
     """Description: Funcion que detecta el sistema operativo y relaciona su comando para borrar la pantalla
     """
