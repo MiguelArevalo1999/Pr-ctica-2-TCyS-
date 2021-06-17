@@ -3,6 +3,8 @@ import pyaudio
 import wave
 import numpy as np
 import time
+import matplotlib.pyplot as plt 
+from scipy.io.wavfile import read          
 
 import math as mt
 
@@ -147,7 +149,6 @@ def identificaVocal(prom_m, prom_h, frecuencia):
 
 
 def leerAudio(Nombre="output0.wav",Graficar=False,carpeta="audios"):
-    from scipy.io.wavfile import read   
     aux = read('./'+carpeta+'/'+Nombre) 
     array_audio = aux[1]
     #print(aux)
@@ -156,7 +157,6 @@ def leerAudio(Nombre="output0.wav",Graficar=False,carpeta="audios"):
 
     ff = np.split(ff,2)
     if(Graficar):
-        import matplotlib.pyplot as plt        
         plt.title(Nombre)
         plt.plot(array_audio)
         plt.show()
