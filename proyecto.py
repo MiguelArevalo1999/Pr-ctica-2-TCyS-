@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 from scipy.io.wavfile import read          
 import math as mt
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, messagebox, filedialog
 import tkinter as tk
 from sys import platform
 
 raiz = Tk()
 raiz.title("Proyecto Final Detección de vocales Eq. Chipocludo")
 raiz.resizable(0,0)
-raiz.geometry("500x250")
+raiz.geometry("500x350")
 raiz.config(bg="cyan")
 
 myFrame=Frame()
@@ -39,28 +39,167 @@ text.place(x=155,y=7)
 
 opcion_label=Label(raiz, text = "Opción")
 opcion_label.place(x=25,y=130)
-combo=ttk.Combobox(raiz)
+combo = ttk.Combobox(raiz)
 combo.place(x=80,y=130)
 combo['values']=('Añadir audio','Detectar vocal')
 
+opcion_vocal=Label(raiz, text = "Vocal")
+opcion_vocal.place(x=230,y=130)
+combo_vocales = ttk.Combobox(raiz)
+combo_vocales.place(x=270,y=130)
+combo_vocales['values']=('a','e','i','o','u')
+
+opcion_genero=Label(raiz, text = "Género")
+opcion_genero.place(x=230,y=160)
+combo_genero = ttk.Combobox(raiz)
+combo_genero.place(x=275,y=160)
+combo_genero['values']=('Hombre','Mujer')
+
+
 label_nombre=Label(raiz, text = "Nombre:")
 label_nombre.place(x=25,y=160)
-message = ttk.Entry(raiz)
+nombre = ttk.Entry(raiz)
 # Posicionarla en la ventana.
-message.place(x=80, y=160)
+nombre.place(x=80, y=160)
 
-def seleccionar_funcion():
-    """
-    Funcion que dependiendo de las opciones en el combobox ejecuta 
-    las operaciones correspondientes
-    """
-    combo_seleccion = combo.get() #Obtener la seleccion en el combobox
+
+
+def leerAudio(Nombre="output0.wav",Graficar=False,carpeta="audios"):
+    aux = read('./'+carpeta+'/'+Nombre) 
+    array_audio = aux[1]
+    #print(aux)
+    #print(len(array_audio))
+    ff = np.array(fft(array_audio),dtype=complex)
+
+    ff = np.split(ff,2)
+    if(Graficar):
+        plt.title(Nombre)
+        plt.plot(array_audio)
+        plt.show()
+        plt.title(Nombre+" FFT")
+        plt.plot(ff[0].real)
+        plt.plot(np.abs(ff[0].real))        
+        plt.show()
+
+    mayor = np.amax(ff[0])
+    #print(mayor)
+    frec = int(mayor.real/10000)
+
+    return frec
+    #print(frec,"Hz")
+
+    #print("Se trata de la vocal " + identificaVocal(frec))
+    #for i in aux[1]:
+    #    print(i)
+
+        
+        
+
+
+def crearAudio(segundos=1,nombre="output", Genero="",carpeta="audios"):
     
-    if combo_seleccion == 'Añadir audio':
-        pass
-    elif combo_seleccion == 'Detectar vocal':
-        pass
+    CHUNK = 1024*2
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 44100
+    RECORD_SECONDS = segundos
 
+    numero_archivo = os.listdir('./'+carpeta+'/')
+    am = em = im = om = um = output = 0
+    ah = eh = ih = oh = uh = 0
+    for j in numero_archivo:
+        j= j.replace(".wav","")
+        if("a" in j and "m" in j):            
+            am+=1
+        if("e" in j and "m" in j):
+            em+=1
+        if("i" in j and "m" in j):
+            im+=1
+        if("o" in j and "m" in j):
+            om+=1
+        if("u" in j and "m" in j):            
+            um+=1
+        if("a" in j and "h" in j):            
+            ah+=1
+        if("e" in j and "h" in j):
+            eh+=1
+        if("i" in j and "h" in j):
+            ih+=1
+        if("o" in j and "h" in j):
+            oh+=1
+        if("u" in j and "h" in j):            
+            uh+=1
+        if("output"):
+            output+=1
+    
+    if(nombre == "a"):
+        if(Genero=="m"):
+            numero_archivo = am
+        elif Genero=="h":
+            numero_archivo = ah
+    if(nombre == "e"):
+        if(Genero=="m"):
+            numero_archivo = em
+        elif Genero=="h":
+            numero_archivo = eh
+    if(nombre == "i"):
+        if(Genero=="m"):
+            numero_archivo = em
+        elif Genero=="h":
+            numero_archivo = eh
+    if(nombre == "o"):
+        if(Genero=="m"):
+            numero_archivo = om
+        elif Genero=="h":
+            numero_archivo = oh
+    if(nombre == "u"):
+        if(Genero=="m"):
+            numero_archivo = um
+        elif Genero=="h":
+            numero_archivo = uh
+    if(nombre == "output"):
+        numero_archivo = output
+
+    WAVE_OUTPUT_FILENAME = "./"+carpeta+"/"+nombre+str(numero_archivo)+Genero+".wav"
+
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=FORMAT,
+                    channels=CHANNELS,
+                    rate=RATE,
+                    input=True,
+                    frames_per_buffer=CHUNK)
+
+    for i in range(3,0,-1):
+        print(i)
+        time.sleep(1)
+
+    print("* grabando")
+
+    frames = []
+
+    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+        data = stream.read(CHUNK)        
+        frames.append(data)
+
+    #print(bytes(0))
+    #for i in range(0,21504):
+    #    frames.append(bytes("0",encoding="utf-8"))
+
+    print("* grabación terminada")
+
+    frames = frames[:32]
+    #print(len(frames))
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setframerate(RATE)
+    wf.writeframes(b''.join(frames))
+    wf.close()
 
 def clearScreen():
     """Description: Funcion que detecta el sistema operativo y relaciona su comando para borrar la pantalla
@@ -198,35 +337,6 @@ def identificaVocal(prom_m, prom_h, frecuencia):
     input("Presione una tecla...")
     clearScreen()
 
-
-def leerAudio(Nombre="output0.wav",Graficar=False,carpeta="audios"):
-    aux = read('./'+carpeta+'/'+Nombre) 
-    array_audio = aux[1]
-    #print(aux)
-    #print(len(array_audio))
-    ff = np.array(fft(array_audio),dtype=complex)
-
-    ff = np.split(ff,2)
-    if(Graficar):
-        plt.title(Nombre)
-        plt.plot(array_audio)
-        plt.show()
-        plt.title(Nombre+" FFT")
-        plt.plot(ff[0].real)
-        plt.plot(np.abs(ff[0].real))        
-        plt.show()
-
-    mayor = np.amax(ff[0])
-    #print(mayor)
-    frec = int(mayor.real/10000)
-
-    return frec
-    #print(frec,"Hz")
-
-    #print("Se trata de la vocal " + identificaVocal(frec))
-    #for i in aux[1]:
-    #    print(i)
-
 def leerArchivos(carpeta="audios"):
     archivos = os.listdir('./'+carpeta+'/')
     vocales_mujeres = [0,0,0,0,0] # a e i o u
@@ -276,170 +386,74 @@ def leerArchivos(carpeta="audios"):
             v_promedio_m.append(vocales_mujeres[i]/m[i])
             v_promedio_h.append(vocales_hombres[i]/h[i])
         except:
-            print("Algunas vocales presentan insuficiencia de datos")
+            messagebox.showinfo(title= "Información", message="Algunas vocales presentan insuficiencia de datos" )
+            
 
     print(v_promedio_m,v_promedio_h)
     return v_promedio_m,v_promedio_h
-        
-        
 
 
-def crearAudio(segundos=1,nombre="output",Genero="",carpeta="audios"):
+
+print("Iniciando...")
+directorio_audio = "./audios/"
+directorio_prueba = "./pruebas/"
+try:
+    os.mkdir(directorio_audio)    
+except:
+    messagebox.showinfo(title= "Información", message="Directorio de audios listo para funcionar" )
+
+
+try:
+    os.mkdir(directorio_prueba) 
+except:
+    messagebox.showinfo(title= "Información", message="Directorio de pruebas listo para funcionar" )
+
+pruebas_m,pruebas_h = leerArchivos()
+antes_archivo = os.listdir('./audios/')
+
+clearScreen()
+
+
+
+def seleccionar_funcion():
+    """
+    Funcion que dependiendo de las opciones en el combobox ejecuta 
+    las operaciones correspondientes
+    """
+    combo_seleccion = combo.get() #Obtener la seleccion en el combobox
+    combo_vocal_seleccion = combo_vocales.get() #Obtiene la vocal seleccionada
+    nombre_entrada = nombre.get() #Obtiene el nombre escrito
+    combo_genero_seleccion = combo_genero.get() #Obtiene el genero del usuario
+
+
+    if combo_seleccion == 'Añadir audio':
+        gen = ""
+        if combo_genero_seleccion == "Hombre":
+            gen = 'h'
+        elif combo_genero_seleccion == "Mujer":
+            gen = 'm'
+        crearAudio(nombre=combo_vocal_seleccion,Genero= gen)
     
-    CHUNK = 1024*2
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 44100
-    RECORD_SECONDS = segundos
+    elif combo_seleccion == 'Detectar vocal':
+        crearAudio(Genero=nombre_entrada,carpeta="pruebas")
+        numero_archivo = os.listdir('./pruebas/')
+        despues_archivo = os.listdir('./audios/')
 
-    numero_archivo = os.listdir('./'+carpeta+'/')
-    am = em = im = om = um = output = 0
-    ah = eh = ih = oh = uh = 0
-    for j in numero_archivo:
-        j= j.replace(".wav","")
-        if("a" in j and "m" in j):            
-            am+=1
-        if("e" in j and "m" in j):
-            em+=1
-        if("i" in j and "m" in j):
-            im+=1
-        if("o" in j and "m" in j):
-            om+=1
-        if("u" in j and "m" in j):            
-            um+=1
-        if("a" in j and "h" in j):            
-            ah+=1
-        if("e" in j and "h" in j):
-            eh+=1
-        if("i" in j and "h" in j):
-            ih+=1
-        if("o" in j and "h" in j):
-            oh+=1
-        if("u" in j and "h" in j):            
-            uh+=1
-        if("output"):
-            output+=1
+        if(antes_archivo != despues_archivo):
+            messagebox.showinfo(title= "Información", message="Se detectaron cambios en los archivos de audio\n \
+                                                                Calculando frecuencias de nuevo" )
+            pruebas_m,pruebas_h = leerArchivos()
+
+        archivo = numero_archivo[-1]
+        frec = leerAudio(carpeta='pruebas',Graficar=True,Nombre=archivo)
+        identificaVocal(pruebas_m,pruebas_h,frec)# CAMBIAR 
     
-    if(nombre == "a"):
-        if(Genero=="m"):
-            numero_archivo = am
-        elif Genero=="h":
-            numero_archivo = ah
-    if(nombre == "e"):
-        if(Genero=="m"):
-            numero_archivo = em
-        elif Genero=="h":
-            numero_archivo = eh
-    if(nombre == "i"):
-        if(Genero=="m"):
-            numero_archivo = em
-        elif Genero=="h":
-            numero_archivo = eh
-    if(nombre == "o"):
-        if(Genero=="m"):
-            numero_archivo = om
-        elif Genero=="h":
-            numero_archivo = oh
-    if(nombre == "u"):
-        if(Genero=="m"):
-            numero_archivo = um
-        elif Genero=="h":
-            numero_archivo = uh
-    if(nombre == "output"):
-        numero_archivo = output
+    else:
+        messagebox.showinfo("Debe seleccionar una opción")
 
-    WAVE_OUTPUT_FILENAME = "./"+carpeta+"/"+nombre+str(numero_archivo)+Genero+".wav"
 
-    p = pyaudio.PyAudio()
+start=Button(raiz, text="Ejecutar",command=seleccionar_funcion)
+start.place(x=200,y=300)        
 
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
-
-    for i in range(3,0,-1):
-        print(i)
-        time.sleep(1)
-
-    print("* grabando")
-
-    frames = []
-
-    for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-        data = stream.read(CHUNK)        
-        frames.append(data)
-
-    #print(bytes(0))
-    #for i in range(0,21504):
-    #    frames.append(bytes("0",encoding="utf-8"))
-
-    print("* grabación terminada")
-
-    frames = frames[:32]
-    #print(len(frames))
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(p.get_sample_size(FORMAT))
-    wf.setframerate(RATE)
-    wf.writeframes(b''.join(frames))
-    wf.close()
-
-def menu():
-    run = True
-
-    print("Iniciando...")
-    directorio1 = "./audios/"
-    directorio2 = "./pruebas/"
-    try:
-        os.mkdir(directorio1)    
-        print("Creado directorio audios")
-    except:
-        print("Detectado directorio audios")
-        #os.mkdir(directorio1)
-
-    try:
-        os.mkdir(directorio2) 
-        print("Creado directorio pruebas")
-    except:
-        print("Detectado directorio pruebas")
-        
-
-    pruebas_m,pruebas_h = leerArchivos()
-    antes_archivo = os.listdir('./audios/')
-
-    clearScreen()
-    while run:
-        opcion = int(input("Reconocimiento de Vocales\n1.Agregar audio\n2.Obtener vocal\n3.Salir\nOpcion:"))
-
-        if opcion == 1:
-            gen = str(input("Introduce el genero del hablante (h, m o vacio para indistinto): ")).lower()
-            vocal = str(input("Introduce que vocal es: "))
-            crearAudio(nombre=vocal,Genero=gen)
-        if opcion == 2:
-
-            gen = str(input("Introduce tu nombre: ")).lower()
-            crearAudio(Genero=gen,carpeta="pruebas")
-            numero_archivo = os.listdir('./pruebas/')
-            despues_archivo = os.listdir('./audios/')
-
-            if(antes_archivo != despues_archivo):
-                print("Se detectaron cambios en los archivos de audio\nCalculando frecuencias de nuevo")
-                pruebas_m,pruebas_h = leerArchivos()
-
-            archivo = numero_archivo[-1]
-            frec = leerAudio(carpeta='pruebas',Graficar=True,Nombre=archivo)
-            identificaVocal(pruebas_m,pruebas_h,frec)# CAMBIAR 
-        if opcion == 3:
-            print("Bye")
-            time.sleep(1)
-            run = False
-        #input()
-        #clearScreen()
-        
 raiz.mainloop()
     
